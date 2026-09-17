@@ -47,3 +47,10 @@ def test_submit_review_card_not_found():
     payload = {"card_id": 999999, "quality": 4}
     response = client.post("/api/cards/review", json=payload)
     assert response.status_code == 404
+
+def test_security_headers_present():
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert "x-process-time-ms" in response.headers
