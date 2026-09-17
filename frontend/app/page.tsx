@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 
 interface Card {
   id: number;
@@ -51,7 +51,6 @@ export default function Home() {
     fetchCards(onlyDue);
   }, [onlyDue]);
 
-  // Extract unique categories for filter pills
   const categories = useMemo(() => {
     const set = new Set<string>();
     cards.forEach((c) => set.add(c.category));
@@ -63,29 +62,32 @@ export default function Home() {
     return cards.filter((c) => c.category === selectedCategory);
   }, [cards, selectedCategory]);
 
-  const handleReview = async (quality: number) => {
-    if (filteredCards.length === 0) return;
-    const currentCard = filteredCards[currentIndex];
+  const handleReview = useCallback(
+    async (quality: number) => {
+      if (filteredCards.length === 0) return;
+      const currentCard = filteredCards[currentIndex];
 
-    try {
-      await fetch(`${API_BASE}/api/cards/review`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ card_id: currentCard.id, quality }),
-      });
-    } catch (err) {
-      console.error("Failed to submit review:", err);
-    }
+      try {
+        await fetch(`${API_BASE}/api/cards/review`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ card_id: currentCard.id, quality }),
+        });
+      } catch (err) {
+        console.error("Failed to submit review:", err);
+      }
 
-    setIsFlipped(false);
-    setShowHint(false);
+      setIsFlipped(false);
+      setShowHint(false);
 
-    if (currentIndex + 1 < filteredCards.length) {
-      setCurrentIndex((prev) => prev + 1);
-    } else {
-      setCompleted(true);
-    }
-  };
+      if (currentIndex + 1 < filteredCards.length) {
+        setCurrentIndex((prev) => prev + 1);
+      } else {
+        setCompleted(true);
+      }
+    },
+    [filteredCards, currentIndex]
+  );
 
   const restartDeck = () => {
     setCurrentIndex(0);
@@ -93,6 +95,39 @@ export default function Home() {
     setShowHint(false);
     setCompleted(false);
   };
+
+  // Keyboard Navigation Listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+
+      if (e.code === "Space") {
+        e.preventDefault();
+        setIsFlipped((prev) => !prev);
+      } else if (e.key === "h" || e.key === "H") {
+        e.preventDefault();
+        setShowHint((prev) => !prev);
+      } else if (e.key === "1") {
+        e.preventDefault();
+        handleReview(1);
+      } else if (e.key === "2") {
+        e.preventDefault();
+        handleReview(3);
+      } else if (e.key === "3") {
+        e.preventDefault();
+        handleReview(4);
+      } else if (e.key === "4") {
+        e.preventDefault();
+        handleReview(5);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleReview]);
 
   const card = filteredCards[currentIndex];
   const progressPercent =
@@ -110,7 +145,6 @@ export default function Home() {
 
         {/* Controls Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 w-full mb-4 bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-800 text-xs">
-          {/* Due Toggle */}
           <button
             onClick={() => setOnlyDue(!onlyDue)}
             className={`px-3 py-1.5 rounded-lg border font-medium transition ${
@@ -122,7 +156,6 @@ export default function Home() {
             {onlyDue ? "Showing Due Cards" : "Showing All Cards"}
           </button>
 
-          {/* Category Selector */}
           <div className="flex items-center gap-1.5 overflow-x-auto max-w-[320px]">
             {categories.map((cat) => (
               <button
@@ -214,7 +247,7 @@ export default function Home() {
                     {card.category}
                   </span>
                   <span className="text-[11px] text-zinc-500 font-mono">
-                    Click anywhere to flip
+                    [Space] to flip
                   </span>
                 </div>
 
@@ -230,9 +263,10 @@ export default function Home() {
                         e.stopPropagation();
                         setShowHint(!showHint);
                       }}
-                      className="text-xs text-zinc-400 hover:text-zinc-200 underline underline-offset-2"
+                      className="text-xs text-zinc-400 hover:text-zinc-200 underline underline-offset-2 flex items-center gap-1"
                     >
-                      {showHint ? `Hint: ${card.hint}` : "Show hint"}
+                      <span>{showHint ? `Hint: ${card.hint}` : "Show hint"}</span>
+                      <kbd className="text-[10px] bg-zinc-800 px-1 py-0.5 rounded border border-zinc-700">H</kbd>
                     </button>
                   ) : (
                     <div />
@@ -261,49 +295,56 @@ export default function Home() {
                 </div>
 
                 <div className="text-center text-[11px] text-zinc-500">
-                  Rate your recall to update SM-2 schedule
+                  Rate your recall using keys [1-4] or buttons below
                 </div>
               </div>
             </div>
           </div>
 
-          {/* SM-2 Confidence Buttons */}
+          {/* SM-2 Confidence Buttons with Keyboard Badges */}
           <div className="w-full max-w-xl mt-5 grid grid-cols-4 gap-2.5">
             <button
               onClick={() => handleReview(1)}
               className="py-2.5 px-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/60 text-red-300 rounded-xl text-xs sm:text-sm font-medium transition active:scale-95 flex flex-col items-center"
             >
-              <span>Again</span>
-              <span className="text-[10px] text-red-500/80 mt-0.5">
-                Reset (1d)
-              </span>
+              <div className="flex items-center gap-1">
+                <span>Again</span>
+                <kbd className="text-[9px] bg-red-950 px-1 rounded border border-red-800">1</kbd>
+              </div>
+              <span className="text-[10px] text-red-500/80 mt-0.5">Reset (1d)</span>
             </button>
+
             <button
               onClick={() => handleReview(3)}
               className="py-2.5 px-2 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-900/60 text-amber-300 rounded-xl text-xs sm:text-sm font-medium transition active:scale-95 flex flex-col items-center"
             >
-              <span>Hard</span>
-              <span className="text-[10px] text-amber-500/80 mt-0.5">
-                Moderate
-              </span>
+              <div className="flex items-center gap-1">
+                <span>Hard</span>
+                <kbd className="text-[9px] bg-amber-950 px-1 rounded border border-amber-800">2</kbd>
+              </div>
+              <span className="text-[10px] text-amber-500/80 mt-0.5">Moderate</span>
             </button>
+
             <button
               onClick={() => handleReview(4)}
               className="py-2.5 px-2 bg-blue-950/40 hover:bg-blue-900/60 border border-blue-700/60 text-blue-300 rounded-xl text-xs sm:text-sm font-medium transition active:scale-95 flex flex-col items-center"
             >
-              <span>Good</span>
-              <span className="text-[10px] text-blue-500/80 mt-0.5">
-                Standard
-              </span>
+              <div className="flex items-center gap-1">
+                <span>Good</span>
+                <kbd className="text-[9px] bg-blue-950 px-1 rounded border border-blue-800">3</kbd>
+              </div>
+              <span className="text-[10px] text-blue-500/80 mt-0.5">Standard</span>
             </button>
+
             <button
               onClick={() => handleReview(5)}
               className="py-2.5 px-2 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-900/60 text-emerald-300 rounded-xl text-xs sm:text-sm font-medium transition active:scale-95 flex flex-col items-center"
             >
-              <span>Easy</span>
-              <span className="text-[10px] text-emerald-500/80 mt-0.5">
-                Extended
-              </span>
+              <div className="flex items-center gap-1">
+                <span>Easy</span>
+                <kbd className="text-[9px] bg-emerald-950 px-1 rounded border border-emerald-800">4</kbd>
+              </div>
+              <span className="text-[10px] text-emerald-500/80 mt-0.5">Extended</span>
             </button>
           </div>
         </>
