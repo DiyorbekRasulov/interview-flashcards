@@ -13,6 +13,8 @@ interface Card {
   ease_factor: number;
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 export default function Home() {
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -25,7 +27,10 @@ export default function Home() {
 
   const fetchCards = (dueOnly: boolean) => {
     setLoading(true);
-    const endpoint = dueOnly ? "http://localhost:8000/api/cards/due" : "http://localhost:8000/api/cards/all";
+    const endpoint = dueOnly
+      ? `${API_BASE}/api/cards/due`
+      : `${API_BASE}/api/cards/all`;
+
     fetch(endpoint)
       .then((res) => res.json())
       .then((data: Card[]) => {
@@ -63,7 +68,7 @@ export default function Home() {
     const currentCard = filteredCards[currentIndex];
 
     try {
-      await fetch("http://localhost:8000/api/cards/review", {
+      await fetch(`${API_BASE}/api/cards/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ card_id: currentCard.id, quality }),
@@ -90,9 +95,10 @@ export default function Home() {
   };
 
   const card = filteredCards[currentIndex];
-  const progressPercent = filteredCards.length > 0 
-    ? Math.round(((currentIndex) / filteredCards.length) * 100) 
-    : 0;
+  const progressPercent =
+    filteredCards.length > 0
+      ? Math.round((currentIndex / filteredCards.length) * 100)
+      : 0;
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-4 sm:p-6">
@@ -144,7 +150,9 @@ export default function Home() {
         {filteredCards.length > 0 && !completed && (
           <div className="w-full">
             <div className="flex justify-between text-[11px] text-zinc-500 uppercase tracking-widest font-mono mb-1.5">
-              <span>Card {currentIndex + 1} of {filteredCards.length}</span>
+              <span>
+                Card {currentIndex + 1} of {filteredCards.length}
+              </span>
               <span>{progressPercent}% Complete</span>
             </div>
             <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden border border-zinc-800">
@@ -159,12 +167,16 @@ export default function Home() {
 
       {/* Main Study Surface */}
       {loading ? (
-        <p className="text-zinc-400 animate-pulse text-sm my-16">Syncing database schedules...</p>
+        <p className="text-zinc-400 animate-pulse text-sm my-16">
+          Syncing database schedules...
+        </p>
       ) : filteredCards.length === 0 ? (
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 max-w-md text-center my-12">
           <p className="text-zinc-300 font-medium mb-1">No cards to review</p>
           <p className="text-zinc-500 text-xs">
-            {onlyDue ? "All cards in this set are scheduled for future dates." : "No cards found for this category."}
+            {onlyDue
+              ? "All cards in this set are scheduled for future dates."
+              : "No cards found for this category."}
           </p>
         </div>
       ) : completed ? (
@@ -201,7 +213,9 @@ export default function Home() {
                   <span className="text-xs uppercase font-bold text-emerald-400 tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
                     {card.category}
                   </span>
-                  <span className="text-[11px] text-zinc-500 font-mono">Click anywhere to flip</span>
+                  <span className="text-[11px] text-zinc-500 font-mono">
+                    Click anywhere to flip
+                  </span>
                 </div>
 
                 <p className="text-lg sm:text-xl font-medium text-center text-zinc-100 px-2">
@@ -220,8 +234,12 @@ export default function Home() {
                     >
                       {showHint ? `Hint: ${card.hint}` : "Show hint"}
                     </button>
-                  ) : <div />}
-                  <span className="text-[11px] text-zinc-600 font-mono">Reps: {card.repetition_count}</span>
+                  ) : (
+                    <div />
+                  )}
+                  <span className="text-[11px] text-zinc-600 font-mono">
+                    Reps: {card.repetition_count}
+                  </span>
                 </div>
               </div>
 
@@ -231,7 +249,9 @@ export default function Home() {
                   <span className="text-xs uppercase font-bold text-zinc-400 tracking-wider bg-zinc-800 px-2.5 py-1 rounded-md">
                     Solution
                   </span>
-                  <span className="text-[11px] text-zinc-500 font-mono">Interval: {card.interval_days}d</span>
+                  <span className="text-[11px] text-zinc-500 font-mono">
+                    Interval: {card.interval_days}d
+                  </span>
                 </div>
 
                 <div className="overflow-y-auto max-h-48 my-auto pr-1">
@@ -254,28 +274,36 @@ export default function Home() {
               className="py-2.5 px-2 bg-red-950/40 hover:bg-red-900/60 border border-red-900/60 text-red-300 rounded-xl text-xs sm:text-sm font-medium transition active:scale-95 flex flex-col items-center"
             >
               <span>Again</span>
-              <span className="text-[10px] text-red-500/80 mt-0.5">Reset (1d)</span>
+              <span className="text-[10px] text-red-500/80 mt-0.5">
+                Reset (1d)
+              </span>
             </button>
             <button
               onClick={() => handleReview(3)}
               className="py-2.5 px-2 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-900/60 text-amber-300 rounded-xl text-xs sm:text-sm font-medium transition active:scale-95 flex flex-col items-center"
             >
               <span>Hard</span>
-              <span className="text-[10px] text-amber-500/80 mt-0.5">Moderate</span>
+              <span className="text-[10px] text-amber-500/80 mt-0.5">
+                Moderate
+              </span>
             </button>
             <button
               onClick={() => handleReview(4)}
               className="py-2.5 px-2 bg-blue-950/40 hover:bg-blue-900/60 border border-blue-700/60 text-blue-300 rounded-xl text-xs sm:text-sm font-medium transition active:scale-95 flex flex-col items-center"
             >
               <span>Good</span>
-              <span className="text-[10px] text-blue-500/80 mt-0.5">Standard</span>
+              <span className="text-[10px] text-blue-500/80 mt-0.5">
+                Standard
+              </span>
             </button>
             <button
               onClick={() => handleReview(5)}
               className="py-2.5 px-2 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-900/60 text-emerald-300 rounded-xl text-xs sm:text-sm font-medium transition active:scale-95 flex flex-col items-center"
             >
               <span>Easy</span>
-              <span className="text-[10px] text-emerald-500/80 mt-0.5">Extended</span>
+              <span className="text-[10px] text-emerald-500/80 mt-0.5">
+                Extended
+              </span>
             </button>
           </div>
         </>
