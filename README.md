@@ -1,6 +1,10 @@
 # TechPrep - Spaced Repetition CS Interview Engine
 
 ![CI Status](https://github.com/DiyorbekRasulov/interview-flashcards/actions/workflows/ci.yml/badge.svg)
+![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.dot.js)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
 A full-stack technical interview preparation platform leveraging the **SuperMemo-2 (SM-2)** spaced repetition algorithm to optimize retention intervals for core computer science concepts (Operating Systems, Concurrency, Algorithms, and System Design).
 

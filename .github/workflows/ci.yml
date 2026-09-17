@@ -31,7 +31,7 @@ jobs:
           cd backend
           python -m app.seed
 
-      - name: Run Pytest test suite
+      - name: Run Pytest with Coverage Gate
         run: |
           cd backend
-          pytest -v
+          pytest --cov=app --cov-fail-under=80 -v tests/
